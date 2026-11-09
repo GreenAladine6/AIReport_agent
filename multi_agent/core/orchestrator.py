@@ -3,9 +3,11 @@
 Main orchestrator that coordinates the entire workflow
 """
 
-import asyncio
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, TypedDict
+
+from langchain_core.runnables import RunnableLambda
+from langgraph.graph import END, START, StateGraph
 
 from github.file_downloader import GitHubFileDownloader
 from agents.code_analyzer import CodeAnalyzer
@@ -16,6 +18,17 @@ from utils.logger import logger
 from utils.cache import cache
 
 from utils.db_client import DatabaseClient
+
+
+class ReportWorkflowState(TypedDict, total=False):
+    repo_url: str
+    id_project: int
+    files_to_download: list
+    started_at: datetime
+    downloaded_files: Dict[str, Any]
+    file_analyses: Dict[str, Any]
+    business_report: Dict[str, Any]
+    html_report: str
 
 class BusinessReportOrchestrator:
     """
@@ -35,6 +48,14 @@ class BusinessReportOrchestrator:
         self.feedback_collector = FeedbackCollector()
         self.db_client = DatabaseClient()
 
+        # LangChain runnables provide a consistent invocation boundary for
+        # agents. LangGraph passes each agent's output to the next node as state.
+        self.analysis_runnable = RunnableLambda(self.analyzer.analyze_file)
+        self.translation_runnable = RunnableLambda(
+            lambda state: self.translator.translate(state["file_analyses"])
+        )
+        self.workflow = self._build_workflow()
+
         # In-memory state for the last run (simple persistence)
         self.state: Dict[str, Any] = {}
         self.last_analyses: Dict[str, Any] = {}
@@ -42,91 +63,93 @@ class BusinessReportOrchestrator:
     
     async def generate_report(self, repo_url: str, id_project: int, files_to_download: list = None):
         """
-        Main method: Download files, analyze, and generate business report
+        Run the LangGraph workflow and return the generated HTML report.
         """
-        logger.info(f"🚀 Starting business report generation for {repo_url}")
-        start_time = datetime.now()
-        
-        # Step 1: Parse GitHub URL
-        repo_info = self.downloader.parse_github_url(repo_url)
-        logger.info(f"📦 Repository: {repo_info['owner']}/{repo_info['repo']}")
-        
-        # Step 2: Download files
         if not files_to_download:
-            # Default important files to check
             files_to_download = [
-                "README.md", "app.py", "main.py", "routes.py", "models.py", 
-                "templates/index.html", "templates/login.html", 
+                "README.md", "app.py", "main.py", "routes.py", "models.py",
+                "templates/index.html", "templates/login.html",
                 "static/js/main.js", "static/css/style.css"
             ]
-        
-        logger.info(f"📥 Downloading {len(files_to_download)} files...")
+
+        result = await self.workflow.ainvoke({
+            "repo_url": repo_url,
+            "id_project": id_project,
+            "files_to_download": files_to_download,
+            "started_at": datetime.now(),
+        })
+        return result["html_report"]
+
+    def _build_workflow(self):
+        graph = StateGraph(ReportWorkflowState)
+        graph.add_node("fetch", self._fetch_node)
+        graph.add_node("analyze", self._analyze_node)
+        graph.add_node("translate", self._translate_node)
+        graph.add_node("report", self._report_node)
+        graph.add_edge(START, "fetch")
+        graph.add_edge("fetch", "analyze")
+        graph.add_edge("analyze", "translate")
+        graph.add_edge("translate", "report")
+        graph.add_edge("report", END)
+        return graph.compile()
+
+    async def _fetch_node(self, state: ReportWorkflowState) -> Dict[str, Any]:
+        repo_url = state["repo_url"]
+        logger.info(f"🚀 Starting report workflow for {repo_url}")
+        repo_info = self.downloader.parse_github_url(repo_url)
+        logger.info(f"📦 Repository: {repo_info['owner']}/{repo_info['repo']}")
+        logger.info(f"📥 Downloading {len(state['files_to_download'])} files...")
         async with self.downloader as downloader:
             downloaded_files = await downloader.download_multiple_files(
-                repo_info['owner'],
-                repo_info['repo'],
-                files_to_download
+                repo_info["owner"], repo_info["repo"], state["files_to_download"]
             )
-        
         logger.info(f"✅ Downloaded {len(downloaded_files)} files")
-        
-        # Step 3: Analyze each file
+        return {"downloaded_files": downloaded_files}
+
+    def _analyze_node(self, state: ReportWorkflowState) -> Dict[str, Any]:
         logger.info("🔍 Analyzing files...")
-        file_analyses = {}
-        for path, file_info in downloaded_files.items():
-            analysis = self.analyzer.analyze_file(file_info)
-            file_analyses[path] = analysis
-            logger.info(f"   ✅ Analyzed {path} - {analysis.get('type', 'unknown')}")
-
-        self.last_analyses = file_analyses
-        
-        # Step 4: Translate to business language
-        logger.info("💼 Translating to business language...")
-        business_report = self.translator.translate(file_analyses)
-        self.last_business_report = business_report
-        
-        # Step 5: Generate final HTML report
-        logger.info("📊 Generating business report HTML...")
-        html_report = await self._generate_html_report(
-            repo_url,
-            downloaded_files,
-            file_analyses,
-            business_report,
-            start_time
-        )
-
-        # Also produce a plain-text representation for DB storage
-        text_report = self._generate_text_report(
-            repo_url,
-            downloaded_files,
-            file_analyses,
-            business_report,
-            start_time,
-        )
-
-        # Step 6: Save to Database (store plain text in report_content, HTML in attachment)
-        logger.info("💾 Saving report to database...")
-        processing_time = (datetime.now() - start_time).total_seconds()
-        
-        report_data = {
-            'report_content': text_report,
-            'attachment': html_report,
-            'summary': business_report.get('summary', ''),
-            'features_count': len(business_report.get('features', [])),
-            'business_rules_count': len(business_report.get('business_logic', [])),
-            'files_analyzed': len(downloaded_files),
-            'repo_url': repo_url,
-            'processing_time_seconds': processing_time,
-            'confidence_score': business_report.get('confidence', 0.85),
-            'id_project': id_project
+        analyses = {
+            path: self.analysis_runnable.invoke(file_info)
+            for path, file_info in state["downloaded_files"].items()
         }
-        
-        self.db_client.save_report(report_data)
-        
-        # Keep printing only the concise summary (no large HTML dump)
-        self._print_summary(business_report, len(downloaded_files), start_time)
-        
-        return html_report
+        self.last_analyses = analyses
+        return {"file_analyses": analyses}
+
+    def _translate_node(self, state: ReportWorkflowState) -> Dict[str, Any]:
+        logger.info("📝 Translating analysis into a report...")
+        report = self.translation_runnable.invoke({
+            "file_analyses": state["file_analyses"]
+        })
+        self.last_business_report = report
+        return {"business_report": report}
+
+    async def _report_node(self, state: ReportWorkflowState) -> Dict[str, Any]:
+        repo_url = state["repo_url"]
+        started_at = state["started_at"]
+        files = state["downloaded_files"]
+        analyses = state["file_analyses"]
+        report = state["business_report"]
+        html_report = await self._generate_html_report(
+            repo_url, files, analyses, report, started_at
+        )
+        text_report = self._generate_text_report(
+            repo_url, files, analyses, report, started_at
+        )
+        processing_time = (datetime.now() - started_at).total_seconds()
+        self.db_client.save_report({
+            "report_content": text_report,
+            "attachment": html_report,
+            "summary": report.get("summary", ""),
+            "features_count": len(report.get("features", [])),
+            "business_rules_count": len(report.get("business_logic", [])),
+            "files_analyzed": len(files),
+            "repo_url": repo_url,
+            "processing_time_seconds": processing_time,
+            "confidence_score": report.get("confidence", 0.85),
+            "id_project": state["id_project"],
+        })
+        self._print_summary(report, len(files), started_at)
+        return {"html_report": html_report}
 
     def ingest_feedback(self, message: str, structured: Dict[str, Any] = None) -> Dict[str, Any]:
         """

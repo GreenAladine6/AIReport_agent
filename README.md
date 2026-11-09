@@ -19,6 +19,7 @@ Built with ❤️ by:
 - [Performance & Scalability](#performance--scalability)
 - [Team Contributions](#team-contributions)
 - [Installation](#installation)
+- [Docker Compose](#docker-compose)
 - [Usage](#usage)
 - [API Reference](#api-reference)
 
@@ -317,6 +318,44 @@ python main.py
 
 # In another terminal, analyze a repository
 python cli.py analyze https://github.com/username/repo --files app.py models.py
+
+## 🐳 Docker Compose
+
+The Compose setup runs the frontend, backend API, chatbot API, and PostgreSQL database as separate services. The multiagent component is a command-line job in this repository, so Compose builds it under the `jobs` profile and runs it on demand instead of keeping an idle container alive.
+
+Copy the root `.env.example` to `.env` for Docker Compose. For local development outside Compose, copy the matching service template (`backend/.env.example`, `frontend/.env.example`, `multi_agent/.env.example`, or `chatbot/.env.example`) to `.env` in that service directory. Add the credentials needed by the services:
+
+```dotenv
+GEMINI_API_KEY=your_gemini_api_key
+GITHUB_TOKEN=your_github_token
+DEEPSEEK_API_KEY=your_deepseek_api_key
+# Optional when Ollama runs on the host machine
+OLLAMA_URL=http://host.docker.internal:11434
+POSTGRES_USER=aireport
+POSTGRES_PASSWORD=change_me
+POSTGRES_DB=aireport
+```
+
+Build and start the web services:
+
+```bash
+docker compose up --build
+```
+
+Open the frontend at `http://localhost:5173`, the backend API docs at `http://localhost:8000/docs`, and the chatbot API docs at `http://localhost:8001/docs`. PostgreSQL and Chroma data are kept in the `postgres_data` and `chatbot_chroma` named volumes. The chatbot requires `GEMINI_API_KEY` unless `USE_MOCK=1` is set.
+
+Run a repository analysis as a one-off multiagent job:
+
+```bash
+docker compose --profile jobs build multiagent
+docker compose --profile jobs run --rm multiagent https://github.com/owner/repository --files README.md app.py --id-project 1
+```
+
+The job requires `GITHUB_TOKEN` and `DEEPSEEK_API_KEY`. Set `OLLAMA_URL` to a reachable Ollama instance if report narrative generation should use Ollama. Stop the long-running services with `docker compose down`; add `-v` only when you intend to delete the PostgreSQL data volume.
+
+### Multiagent orchestration status
+
+The multiagent entry point is a CLI. The multiagent orchestrator now builds a LangGraph workflow with fetch, analyze, translate, and report nodes. LangGraph carries each stage’s output through shared workflow state. LangChain `RunnableLambda` wrappers provide a consistent invocation interface for the analysis and translation agents. The underlying analyzer and translator implementations remain the existing Python classes.
 
 ## 🚀 *Usage*
 

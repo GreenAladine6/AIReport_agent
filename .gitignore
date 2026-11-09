@@ -1,3 +1,6 @@
 venv/
 Astrafenix-AI/venv/
 ./backend/venv/
+# Local environment files (keep committed .env.example templates)
+.env
+**/.env

@@ -1,0 +1,85 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://127.0.0.1:8000}
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aireport}:${POSTGRES_PASSWORD:-aireport_local}@database:5432/${POSTGRES_DB:-aireport}
+      SECRET_KEY: ${SECRET_KEY:-change-me-before-deployment}
+      JIRA_DOMAIN: ${JIRA_DOMAIN:-your-domain.atlassian.net}
+      JIRA_EMAIL: ${JIRA_EMAIL:-you@example.com}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.chatbot
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aireport}:${POSTGRES_PASSWORD:-aireport_local}@database:5432/${POSTGRES_DB:-aireport}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      USE_MOCK: ${USE_MOCK:-0}
+      CHROMA_PERSIST_DIR: /data/chroma
+      CHROMA_COLLECTION: ${CHROMA_COLLECTION:-report_chunks}
+    volumes:
+      - chatbot_chroma:/data/chroma
+    ports:
+      - "8001:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  # The multiagent project is a CLI job, not a long-running HTTP service.
+  # Start it on demand with: docker compose run --rm multiagent <repo-url> [options]
+  multiagent:
+    profiles: ["jobs"]
+    build:
+      context: .
+      dockerfile: Dockerfile.multiagent
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-coder}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aireport}:${POSTGRES_PASSWORD:-aireport_local}@database:5432/${POSTGRES_DB:-aireport}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aireport}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aireport_local}
+      POSTGRES_DB: ${POSTGRES_DB:-aireport}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  chatbot_chroma:
