@@ -1,8 +1,8 @@
-# 📚 *Multi-Agent System for Code-to-Business Translation*
+# 📚 AIReport-agents — Multi-Agent Code-to-Documentation System
 Built with ❤️ by:
 - *Kabil Daami* & *Dhia Eddine Sghaier* - Multi-Agent System
 - *Lina Bannour* & *Ala Grine* - Frontend, Backend, Database & RAG Chatbot
-## 🚀 *Transforming Code into Business Intelligence*
+## 🚀 *Transforming Code into Clear, Maintainable Documentation*
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://python.org)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2.0-green)](https://langchain.ai)
@@ -24,13 +24,13 @@ Built with ❤️ by:
 
 ## 🔭 *Overview*
 
-This *multi-agent system* bridges the critical gap between software development and business stakeholders. It automatically analyzes GitHub repositories, extracts business rules and features from code, and generates comprehensive business-friendly reports. The system then makes these insights accessible through an intelligent chatbot powered by RAG (Retrieval-Augmented Generation).
+AIReport-agents analyzes GitHub repositories and turns their source code into clear, structured documentation. It identifies project components, functions, classes, routes, and important logic, then generates documentation and makes it searchable through a RAG-powered (Retrieval-Augmented Generation) chatbot.
 
 ### *The Problem We Solve*
-- *Developers* write code with business logic hidden in if-statements, functions, and classes
-- *Business stakeholders* need to understand what features exist and how they work
-- *Manual analysis* takes hours or days and misses crucial details
-- *Communication gap* leads to misunderstandings and rework
+- *Developers and maintainers* often need to inspect many files to understand a project’s structure and behavior
+- *Project teams* need accurate documentation that explains what the code contains and how its parts work
+- *Manual documentation* takes hours or days and can miss important details
+- *Outdated or missing documentation* slows onboarding and maintenance
 
 ## 🏗️ *System Architecture*
 
@@ -46,8 +46,8 @@ This *multi-agent system* bridges the critical gap between software development 
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │                    LangGraph Workflow                        │   │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │   │
-│  │  │ Fetch   │─▶│ Analyze │─▶│Business │─▶│ Report  │       │   │
-│  │  │ Code    │  │ Code    │  │ Translate│ │Generate │       │   │
+│  │  │ Fetch   │─▶│ Analyze │─▶│Document │─▶│ Generate│       │   │
+│  │  │ Code    │  │ Code    │  │  Code    │ │  Docs   │       │   │
 │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘       │   │
 │  │       │            │            │            │              │   │
 │  │       └────────────┴────────────┴────────────┘              │   │
@@ -63,14 +63,14 @@ This *multi-agent system* bridges the critical gap between software development 
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        AGENT LAYER                                   │
 │  ┌────────────────────────────┐    ┌────────────────────────────┐  │
-│  │     AGENT 1: Code Understanding  │    │    AGENT 2: Business Translation│  │
+│  │     AGENT 1: Code Analysis      │    │    AGENT 2: Documentation│  │
 │  │        (Kabil & Dhia)           │    │      (Kabil & Dhia)           │  │
 │  ├────────────────────────────┤    ├────────────────────────────┤  │
 │  │  • AST Parser (Python)        │    │  • Ollama 3.1:8B           │  │
 │  │  • BeautifulSoup (HTML)       │    │  • Rule Categorization     │  │
-│  │  • Regex (JS/CSS)             │    │  • Business Impact Analysis│  │
+│  │  • Regex (JS/CSS)             │    │  • Documentation Structure│  │
 │  │  • DeepSeek API for complex    │    │  • Executive Summaries     │  │
-│  │    business logic extraction  │    │  • Zero token cost (local) │  │
+│  │    code context extraction  │    │  • Zero token cost (local) │  │
 │  └────────────────────────────┘    └────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
@@ -81,7 +81,7 @@ This *multi-agent system* bridges the critical gap between software development 
 │  │   with pgvector │    │     Cache       │    │   (Chroma)      │  │
 │  │  (Lina & Ala)   │    │  (Lina & Ala)   │    │  (Lina & Ala)   │  │
 │  ├─────────────────┤    ├─────────────────┤    ├─────────────────┤  │
-│  │ • Reports       │    │ • GitHub API    │    │ • Embeddings    │  │
+│  │ • Documentation│    │ • GitHub API    │    │ • Embeddings    │  │
 │  │ • Projects      │    │ • File contents │    │ • Patterns      │  │
 │  │ • Conversations │    │ • Rate limiting │    │ • Similarity    │  │
 │  │ • Embeddings    │    │                 │    │                 │  │
@@ -95,7 +95,7 @@ This *multi-agent system* bridges the critical gap between software development 
 │  │     (Lina & Ala)           │    │     (Lina & Ala)           │  │
 │  ├────────────────────────────┤    ├────────────────────────────┤  │
 │  │  • Semantic Search         │    │  • Question Answering      │  │
-│  │  • Context Retrieval       │    │  • Business Language       │  │
+│  │  • Context Retrieval       │    │  • Clear Explanations       │  │
 │  │  • Prompt Engineering      │    │  • Multi-turn Conversations│  │
 │  │  • Citation Generation     │    │  • Source Attribution      │  │
 │  └────────────────────────────┘    └────────────────────────────┘  │
@@ -114,8 +114,8 @@ This *multi-agent system* bridges the critical gap between software development 
 ### *AI & Machine Learning*
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| *Code Understanding* | DeepSeek Coder API | Business logic extraction |
-| *Report Generation* | Ollama 3.1:8B (Local) | Cost-effective narrative generation |
+| *Code Analysis* | DeepSeek Coder API | Code structure and logic analysis |
+| *Documentation Generation* | Ollama 3.1:8B (Local) | Clear documentation generation |
 | *Question Answering* | Gemini 1.5 Pro | Intelligent chatbot responses |
 | *Embeddings* | Gemini Embedding-001 | Semantic search |
 | *Vector Storage* | ChromaDB | Pattern learning & similarity |
@@ -123,15 +123,15 @@ This *multi-agent system* bridges the critical gap between software development 
 ### *Database & Storage*
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| *Primary Database* | PostgreSQL 14+ | Report and project storage |
+| *Primary Database* | PostgreSQL 14+ | Documentation and project storage |
 | *Vector Extension* | pgvector | Embedding storage & similarity search |
 | *Caching* | In-memory TTL Cache | GitHub API response caching |
 
 ## ✨ *Key Features*
 
 ### *1. Multi-Agent Architecture (Kabil & Dhia)*
-- *Agent 1 (Code Understanding)*: Analyzes code structure using AST parsing, BeautifulSoup, and regex to extract functions, classes, routes, and business logic
-- *Agent 2 (Business Translation)*: Converts technical findings into business-friendly language using local Ollama 3.1:8B
+- *Agent 1 (Code Analysis)*: Analyzes code structure using AST parsing, BeautifulSoup, and regex to identify functions, classes, routes, and key logic
+- *Agent 2 (Documentation)*: Converts technical findings into clear explanations and structured documentation using local Ollama 3.1:8B
 - *LangGraph Orchestration*: Manages agent communication and workflow state
 - *Feedback Loop*: Continuous improvement through user corrections
 
@@ -141,26 +141,26 @@ This *multi-agent system* bridges the critical gap between software development 
 - Rate limiting with exponential backoff
 - In-memory caching (TTL: 300s)
 
-### *3. Business Rule Extraction*
+### *3. Code Logic Documentation*
 # From technical code:
 if not self.is_following(user):
     self.follow(user)
 
-# To business insight:
-"Social follow logic that prevents duplicate follows"
-"Impact: Maintains clean social graph and prevents spam"
+# To documentation:
+"The follow operation checks whether the user already follows the account before creating a new follow."
+"This avoids duplicate follow relationships."
 
 ### *4. RAG-Powered Chatbot (Lina & Ala)*
-- *PostgreSQL Database*: Stores reports, projects, and conversations
-- *pgvector Extension*: Enables semantic search on report embeddings
+- *PostgreSQL Database*: Stores documentation, projects, and conversations
+- *pgvector Extension*: Enables semantic search on documentation embeddings
 - *Gemini 1.5 Pro*: Provides intelligent, context-aware responses
-- *RAG Pipeline*: Retrieves relevant report chunks and generates accurate answers
+- *RAG Pipeline*: Retrieves relevant documentation chunks and generates accurate answers
 - *Multi-turn Conversations*: Maintains context across user interactions
 
-### *5. Comprehensive Reporting*
+### *5. Comprehensive Documentation*
 - Executive summaries
 - Feature counts and categorization
-- Business rules with impact analysis
+- Key code logic with explanations
 - Security updates tracking
 - Performance metrics
 
@@ -213,7 +213,7 @@ Speedup: 3.25x
 *98% cost reduction compared to GPT-4 ($2.50/analysis)*
 
 ### *Accuracy Metrics*
-- Business rule detection: *92%*
+- Code logic identification: *92%*
 - Feature identification: *95%*
 - False positive rate: *8%*
 - Confidence score: *85%* (improves with feedback)
@@ -225,15 +225,15 @@ Speedup: 3.25x
 
 | Component | Technologies | Responsibilities |
 |-----------|--------------|------------------|
-| *Agent 1: Code Understanding* | DeepSeek API, AST Parser, BeautifulSoup | • Parse Python/HTML/JS/CSS files<br>• Extract functions, classes, routes<br>• Identify business rules from if-statements<br>• Send complex logic to DeepSeek for analysis |
-| *Agent 2: Business Translation* | Ollama 3.1:8B, LangGraph | • Convert technical analysis to business language<br>• Generate executive summaries<br>• Categorize business rules<br>• Create business impact statements |
+| *Agent 1: Code Analysis* | DeepSeek API, AST Parser, BeautifulSoup | • Parse Python/HTML/JS/CSS files<br>• Identify functions, classes, and routes<br>• Locate important logic and relationships<br>• Send complex code context to DeepSeek for analysis |
+| *Agent 2: Documentation* | Ollama 3.1:8B, LangGraph | • Convert code analysis into clear documentation<br>• Generate project and component summaries<br>• Organize documentation by topic<br>• Explain important code paths |
 | *Orchestration* | LangGraph, asyncio | • Manage agent workflow<br>• Handle state between agents<br>• Implement feedback loop<br>• Coordinate parallel processing |
 | *GitHub Integration* | aiohttp, GitHub API | • Smart file sampling<br>• Rate limit handling<br>• Exponential backoff<br>• Response caching |
 
 *Key Achievements:*
 - ✅ Built fully functional multi-agent system with LangGraph
 - ✅ Achieved 1.6s end-to-end processing time
-- ✅ 92% accuracy in business rule detection
+- ✅ 92% accuracy in code logic identification
 - ✅ Implemented feedback loop for continuous improvement
 
 ### *Team 2: Frontend, Backend & Chatbot*
@@ -261,8 +261,8 @@ Speedup: 3.25x
 - Git
 
 ### *Step 1: Clone the Repository*
-git clone https://github.com/yourusername/multi-agent-code-translator.git
-cd multi-agent-code-translator
+git clone https://github.com/yourusername/AIReport-agents.git
+cd AIReport-agents
 
 ### *Step 2: Set Up Virtual Environment*
 python -m venv venv
@@ -291,7 +291,7 @@ OLLAMA_MODEL=llama3.1:8b
 GEMINI_API_KEY=your_gemini_key_here
 
 # Database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/code_translator
+DATABASE_URL=postgresql://postgres:password@localhost:5432/aireport_agents
 
 # Performance
 MAX_FILES_TO_FETCH=20
@@ -300,10 +300,10 @@ CACHE_TTL=300
 
 ### *Step 5: Set Up Database*
 # Create database
-createdb code_translator
+createdb aireport_agents
 
 # Enable pgvector
-psql -d code_translator -c "CREATE EXTENSION vector;"
+psql -d aireport_agents -c "CREATE EXTENSION vector;"
 
 # Initialize tables
 python scripts/init_db.py
@@ -324,11 +324,11 @@ python cli.py analyze https://github.com/username/repo --files app.py models.py
 # Analyze a repository
 python cli.py analyze https://github.com/username/repo --files app.py models.py
 
-# List all reports
+# List all documentation records
 python cli.py list-reports
 
 # Ask the chatbot a question
-python cli.py ask "What business rules are in my e-commerce project?"
+python cli.py ask "How does the authentication flow work in this project?"
 
 # Get project statistics
 python cli.py stats --project-id 1
@@ -338,23 +338,23 @@ python cli.py stats --project-id 1
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | /api/analyze | POST | Analyze a GitHub repository |
-| /api/reports | GET | List all reports |
-| /api/reports/{id} | GET | Get specific report |
+| /api/reports | GET | List all documentation records |
+| /api/reports/{id} | GET | Get specific documentation |
 | /api/chat | POST | Ask a question to the chatbot |
 | /api/projects | GET | List all projects |
-| /api/projects/{id}/reports | GET | Get reports for a project |
+| /api/projects/{id}/reports | GET | Get documentation for a project |
 
 ### *Chatbot Interaction*
-# Example: Ask about business rules
+# Example: Ask about project documentation
 import requests
 
 response = requests.post("http://localhost:8000/api/chat", json={
-    "query": "What discount do gold members get in the e-commerce platform?",
+    "query": "How does the authentication flow work in the application?",
     "session_id": "user-123"
 })
 
 print(response.json()["answer"])
-# "Gold members receive 15% off all purchases. This is part of the loyalty program that also includes Silver members (10% off)."
+# "The authentication flow validates user credentials and creates a session for authorized users."
 
 ## 📈 *Performance Benchmarks*
 
